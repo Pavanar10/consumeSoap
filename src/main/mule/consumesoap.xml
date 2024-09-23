@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="mainFlow" doc:id="ff11d705-d8f5-4ba0-b126-204a5702a239" >
+		<http:listener doc:name="mainFlow" doc:id="4e55acc3-cf17-406f-a4bf-77d11e699879" config-ref="HTTP_Listener_config" path="/allCountries"/>
+		<choice doc:name="Choice" doc:id="48d5163b-c8e6-4d1c-b7aa-b5c6b8060436" >
+			<when expression="#[attributes.method=='GET' and attributes.queryParams.countryCode==null]">
+				<flow-ref doc:name="getAllCounries" doc:id="7c6706e7-da82-4ec3-8a9d-2e0947aa4640" name="FullCountryInfoAllCountriesFlow"/>
+			</when>
+			<when expression="#[attributes.method=='GET' and attributes.queryParams.countryCode !=null]">
+				<set-variable value="#[attributes.queryParams.countryCode]" doc:name="Set Variable" doc:id="76318713-e981-4933-96c8-5aca1d9b4c98" variableName="code"/>
+				<flow-ref doc:name="getCountryByCode" doc:id="0af82258-dae7-400b-b400-2a723782ec06" name="getCountryByCode"/>
+			</when>
+			<otherwise >
+				<set-payload value="Invalid Request" doc:name="Set Payload" doc:id="d142a067-d45c-4355-87f0-ce61dac26ffb" />
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="FullCountryInfoAllCountriesFlow" doc:id="15edb929-9656-48db-8469-74285550b79a" >
+		<wsc:consume doc:name="Consume FullCountryInfoAllCountries" doc:id="3b408270-d52a-4eb1-b517-9a9ea9239abd" config-ref="countryCapitalConsumerConfig" operation="FullCountryInfoAllCountries">
+			<wsc:message >
+				<wsc:body ><![CDATA[<web:FullCountryInfoAllCountries xmlns:web="http://www.oorsprong.org/websamples.countryinfo"/>
+
+]]></wsc:body>
+			</wsc:message>
+		</wsc:consume>
+		<ee:transform doc:name="Transform Message" doc:id="76ad0529-bdfb-4ad3-9274-e1114883bf87" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+
+payload.body]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getCountryByCode" doc:id="ec9eba0d-81fe-47c3-aa1e-c978d8d06c6e" >
+		<ee:transform doc:name="Transform Message" doc:id="13083f06-3117-40c1-afe2-ef3ff5445b06" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.oorsprong.org/websamples.countryinfo
+---
+{
+	ns0#CapitalCity: {
+		ns0#sCountryISOCode: vars.code as String default ""
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="Consume getCountryByCode" doc:id="12be5dc5-66d2-4d10-a2a2-9ec48d109b5a" config-ref="countryCapitalConsumerConfig" operation="CapitalCity"/>
+		<ee:transform doc:name="Transform Message" doc:id="37482552-d91e-4a6d-bd6e-3feabdded482" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0ns ns0 http://www.oorsprong.org/websamples.countryinfo
+
+output application/json
+---
+payload.body.ns0#CapitalCityResponse]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

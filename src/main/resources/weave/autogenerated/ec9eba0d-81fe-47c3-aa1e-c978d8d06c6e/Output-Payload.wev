@@ -1,0 +1,6 @@
+%dw 2.0
+// namespaces
+ns ns0 http://www.oorsprong.org/websamples.countryinfo
+
+type auto_ec9eba0d_81fe_47c3_aa1e_c978d8d06c6e_Output_Payload = {-| ns0#CapitalCityResult: String |-} {"typeId": "{http://www.oorsprong.org/websamples.countryinfo}#AnonType_CapitalCityResponse"}
+
